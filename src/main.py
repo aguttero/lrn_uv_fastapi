@@ -198,11 +198,51 @@ async def read_items_custom_validator(
         id, item = random.choice(list(data.items()))
     return {"id": id, "name": item}
 
-
-
 # VALIDATION for
 # Query parameter Query()
 # Path paramenter Path()
 # Body contente Body()
 # Header content Header()
 # Cookie content Cookie()
+
+# PATH VALIDATION
+from fastapi import Path
+
+@app.get("/items7/{item_id}")
+async def read_items_path_validation(
+    item_id: Annotated[int, Path(title="The ID of the item to get", description="The path description")],
+    q: Annotated[str | None, Query(alias="item-query")] = None,
+):
+    results = {"item_id": item_id}
+    if q:
+        results.update({"q": q})
+    return results
+
+# Query Parameters with Pydantic Model
+from typing import Literal
+from pydantic import Field
+
+class FilterParams(BaseModel):
+    model_config = {"extra":"forbid"} # returns error if additional q parameters are added in the URL
+
+    limit: int = Field(100, gt=0, le=100)
+    offset: int = Field(0, ge=0)
+    order_by: Literal["created_at", "updated_at"] = "created_at"
+    tags: list[str] = []
+
+
+@app.get("/items8/")
+async def read_items_pydnt_mod(filter_query: Annotated[FilterParams, Query()]):
+    return filter_query
+
+# Multiple Body Parameters
+
+class User(BaseModel):
+    username: str
+    full_name: str | None = None
+
+
+@app.put("/items9/{item_id}")
+async def update_item_two_bodies(item_id: int, item: Item, user: User | None):
+    results = {"item_id": item_id, "item": item, "user": user}
+    return results

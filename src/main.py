@@ -53,21 +53,21 @@ async def read_items_response_model() -> Any:
 # Input and output model
 from pydantic import EmailStr
 
-class UserIn(BaseModel):
+class UserInOne(BaseModel):
     username: str
     password: str
     email: EmailStr
     full_name: str | None = None
 
 
-class UserOut(BaseModel):
+class UserOutOne(BaseModel):
     username: str
     email: EmailStr
     full_name: str | None = None
 
 
-@app.post("/user/", response_model=UserOut)
-async def create_user(user: UserIn) -> Any:
+@app.post("/user/", response_model=UserOutOne)
+async def create_user_one(user: UserIn) -> Any:
     return user # filters the pwd field by modelling by response_model UserOut
 
 # Other way to do the same with response type with better tooling type checking support.
@@ -85,3 +85,39 @@ class UserIn2(BaseUser):
 @app.post("/user2/")
 async def create_user2(user: UserIn2) -> BaseUser:
     return user
+
+# User Class and subclass
+
+class UserBase(BaseModel):
+    username: str
+    email: EmailStr
+    full_name: str | None = None
+
+
+class UserIn(UserBase):
+    password: str
+
+
+class UserOut(UserBase):
+    pass
+
+
+class UserInDB(UserBase):
+    hashed_password: str
+
+
+def fake_password_hasher(raw_password: str):
+    return "supersecret" + raw_password
+
+
+def fake_save_user(user_in: UserIn):
+    hashed_password = fake_password_hasher(user_in.password)
+    user_in_db = UserInDB(**user_in.model_dump(), hashed_password=hashed_password)
+    print("User saved! ..not really")
+    return user_in_db
+
+
+@app.post("/user/", response_model=UserOut)
+async def create_user(user_in: UserIn):
+    user_saved = fake_save_user(user_in)
+    return user_saved

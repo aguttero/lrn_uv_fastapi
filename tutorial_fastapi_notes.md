@@ -4,6 +4,10 @@
   uv init project_name --bare
 2. cd and uv add "fastapi[standard]"
 
+## UV setup in existing directory
+uv init
+uv init path/to/existing-dir
+
 ## Run dev server
 uv run fastapi dev [path.py]  // looks for main.py, app.py, api.py, app/main, app/app app/api
 
